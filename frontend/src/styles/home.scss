@@ -90,6 +90,18 @@
   margin-bottom: 20px;
 }
 
+.list-content-item.pending {
+  color: #f43f5e;
+}
+
+.list-content-item.processing {
+  color: #3b82f6;
+}
+
+.list-content-item.complete {
+  color: #10b981;
+}
+
 @media (max-width: 1024px) {
   .dashboard {
     grid-template-columns: repeat(1, 1fr);

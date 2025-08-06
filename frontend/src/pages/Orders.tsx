@@ -125,8 +125,8 @@ const Orders = (props: { update: boolean }) => {
           </div>
 
           {orders.length > 0 ? (
-            orders.map((_, index) => (
-              <div key={index} className="bot-content list-content">
+            orders.map((order, index) => (
+              <div key={order.orderId} className="bot-content list-content">
                 <div className="bot-content-item list-content-item">
                   {index + 1}
                 </div>
@@ -135,32 +135,28 @@ const Orders = (props: { update: boolean }) => {
                   className="bot-content-item list-content-item"
                   style={{ width: '15%' }}
                 >
-                  {_.orderId}
+                  {order.orderId}
                 </div>
 
                 <div
                   className="bot-content-item list-content-item"
                   style={{ width: '25%' }}
                 >
-                  {_.category === 'normal' ? 'Normal' : 'VIP'}
+                  {order.category.toUpperCase()}
+                </div>
+
+                <div
+                  className={`bot-content-item list-content-item ${order.status}`}
+                  style={{ width: '25%' }}
+                >
+                  {order.status.toUpperCase()}
                 </div>
 
                 <div
                   className="bot-content-item list-content-item"
                   style={{ width: '25%' }}
                 >
-                  {_.status === 'complete'
-                    ? 'Complete'
-                    : _.status === 'processing'
-                    ? 'Processing'
-                    : 'Pending'}
-                </div>
-
-                <div
-                  className="bot-content-item list-content-item"
-                  style={{ width: '25%' }}
-                >
-                  {moment(_.createdAt).format('YYYY-MM-DD HH:mm:ssA')}
+                  {moment(order.createdAt).format('HH:mm:ssA')}
                 </div>
               </div>
             ))

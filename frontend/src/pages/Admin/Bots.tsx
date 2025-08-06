@@ -161,36 +161,30 @@ const Bots = (props: { setUpdate: (input: boolean) => void }) => {
           </div>
 
           {bots.length > 0 ? (
-            bots.map((_, index) => (
-              <div key={index} className="bot-content list-content">
+            bots.map((bot, index) => (
+              <div key={bot.botId} className="bot-content list-content">
                 <div className="bot-content-item list-content-item">
                   {index + 1}
                 </div>
 
                 <div className="bot-content-item list-content-item">
-                  {_.status}
+                  {bot.status}
                 </div>
 
                 <div className="bot-content-item list-content-item">
-                  {_.order ? _.order.orderId : '-'}
+                  {bot.order ? bot.order.orderId : '-'}
                 </div>
 
                 <div className="bot-content-item list-content-item">
-                  {_.order
-                    ? _.order.orderCategory === 'normal'
-                      ? 'Normal'
-                      : 'VIP'
-                    : '-'}
+                  {bot.order ? bot.order.orderCategory.toUpperCase() : '-'}
                 </div>
 
-                <div className="bot-content-item list-content-item">
-                  {_.order
-                    ? _.order.orderStatus === 'complete'
-                      ? 'Complete'
-                      : _.order.orderStatus === 'processing'
-                      ? 'Processing'
-                      : 'Pending'
-                    : '-'}
+                <div
+                  className={`bot-content-item list-content-item ${
+                    bot.order ? bot.order.orderStatus : ''
+                  }`}
+                >
+                  {bot.order ? bot.order.orderStatus.toUpperCase() : ''}
                 </div>
               </div>
             ))
