@@ -464,7 +464,7 @@ p.not-found {
 
 .list-header-item {
   padding: 15px;
-  width: 18%;
+  width: 22.5%;
   font-size: 14px;
   line-height: 1;
   color: var(--black-text);
@@ -472,7 +472,7 @@ p.not-found {
 
 .list-content-item {
   padding: 15px;
-  width: 18%;
+  width: 22.5%;
   font-size: 14px;
   line-height: 1.5em;
   color: var(--black-text);
@@ -506,65 +506,6 @@ p.not-found {
   background-color: var(--item-background-dark-grey);
 }
 
-.add-bot,
-.remove-bot {
-  min-height: 40px;
-  padding: 0 50px;
-  border-radius: 5px;
-  font-size: 14px;
-  line-height: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s ease-out;
-}
-
-.add-bot {
-  background-color: var(--orange);
-  color: var(--white);
-  margin-right: 10px;
-}
-
-.remove-bot {
-  background-color: var(--medium-orange);
-}
-
-.add-bot:hover,
-.remove-bot:hover {
-  background-color: var(--dark-background);
-  color: var(--white);
-}
-
-.status-filter {
-  display: flex;
-  margin-bottom: 30px;
-  align-items: center;
-}
-
-.status-filter span {
-  min-height: 40px;
-  padding: 0 30px;
-  border-radius: 5px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  background-color: var(--orange);
-  color: white;
-  margin-right: 10px;
-}
-
-.status-filter span:last-child {
-  margin-right: 0;
-}
-
-.status-filter span:hover {
-  background-color: var(--dark-background);
-  color: var(--white);
-}
-
 @media (max-width: 767px) {
   .form-row.radio-row {
     flex-direction: column;
@@ -589,15 +530,5 @@ p.not-found {
   .list-container {
     overflow-y: hidden;
     overflow-x: scroll;
-  }
-
-  .add-bot,
-  .remove-bot {
-    padding: 0 30px;
-  }
-
-  .orders-container .list-content,
-  .orders-container .list-header {
-    width: 280%;
   }
 }

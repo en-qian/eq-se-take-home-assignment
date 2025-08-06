@@ -106,3 +106,28 @@ export const clearCookie = () => {
   cookies.remove('user_data');
   cookies.remove('sid');
 };
+
+export const generateId = (segmentLength: number, split?: boolean) => {
+  const segments = 5;
+
+  const remainder = segmentLength % 5;
+
+  segmentLength =
+    remainder <= 5 - remainder
+      ? segmentLength - remainder
+      : segmentLength + (5 - remainder);
+
+  const CHARS =
+    '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+  const generateSegment = (length: number) =>
+    new Array(length)
+      .fill('')
+      .map(() => CHARS[Math.floor(Math.random() * CHARS.length)])
+      .join('');
+
+  return new Array(segments)
+    .fill('')
+    .map(() => generateSegment(segmentLength / segments))
+    .join(split ? '-' : '');
+};

@@ -1,31 +1,21 @@
-import * as botApi from '@api/bots';
 import LoadingScreen from '@components/LoadingScreen';
-import {
-  faChevronLeft,
-  faChevronRight,
-} from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { BotDetails, OrderDetails } from '../../types/general';
+
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'react-toastify';
+import * as utils from '@utils';
 
-const PAGINATION_OFFSET = 10;
-
-const Bots = () => {
-  const [bots, setBots] = useState<botApi.BotDetails[]>([]);
-  const [displayedItems, setDisplayedItems] = useState<botApi.BotDetails[]>([]);
-  const [offset, setOffset] = useState(0);
-  const [totalPage, setTotalPage] = useState(1);
+const Bots = (props: { setUpdate: (input: boolean) => void }) => {
+  const [bots, setBots] = useState<BotDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const canAction = useRef(true);
 
-  const getBots = async () => {
+  const getBots = () => {
     try {
-      const response = await botApi.getBots();
+      const response = utils.getCookie<BotDetails[]>('bots') || [];
 
       setBots(response);
-      setTotalPage(Math.ceil(response.length / PAGINATION_OFFSET));
-      setDisplayedItems(response.slice(0, PAGINATION_OFFSET));
     } catch (error) {
       setBots([]);
     } finally {
@@ -37,60 +27,118 @@ const Bots = () => {
     getBots();
   }, []);
 
-  useEffect(() => {
-    setDisplayedItems(
-      bots.slice(
-        offset * PAGINATION_OFFSET,
-        offset * PAGINATION_OFFSET + PAGINATION_OFFSET
-      )
-    );
-  }, [offset]);
-
   const handleBot = async (action: 'add' | 'remove') => {
     if (!canAction.current) return;
 
     canAction.current = false;
 
-    const toastId = toast.loading(
-      `${action === 'add' ? 'Adding' : 'Deleting'} bot...`
-    );
-
     try {
+      const bots = utils.getCookie<BotDetails[]>('bots') || [];
+      const orders = utils.getCookie<OrderDetails[]>('orders') || [];
+
       if (action === 'add') {
-        await botApi.createBot();
+        const pendingOrder = orders.find(
+          order => order.status === 'pending' && order.botId === null
+        );
+
+        const botId = utils.generateId(10);
+
+        bots.push({
+          botId,
+          status: pendingOrder ? 'working' : 'idle',
+          order: pendingOrder
+            ? {
+                orderId: pendingOrder.orderId,
+                orderStatus: 'processing',
+                orderCategory: pendingOrder.category,
+              }
+            : null,
+        });
+
+        if (pendingOrder) {
+          const targetOrderIndex = orders.findIndex(
+            order => order.orderId === pendingOrder.orderId
+          );
+
+          if (orders[targetOrderIndex]) {
+            orders[targetOrderIndex].botId = botId;
+            orders[targetOrderIndex].status = 'processing';
+
+            setTimeout(() => {
+              const latestOrders =
+                utils.getCookie<typeof orders>('orders') || [];
+              const latestBots = utils.getCookie<typeof bots>('bots') || [];
+
+              utils.setCookie(
+                'bots',
+                latestBots.map(bot =>
+                  bot.botId === botId
+                    ? {
+                        ...bot,
+                        order: {
+                          orderId: pendingOrder.orderId,
+                          orderCategory: pendingOrder.category,
+                          orderStatus: 'complete',
+                        },
+                        status: 'idle',
+                      }
+                    : bot
+                )
+              );
+              utils.setCookie(
+                'orders',
+                latestOrders.map(order =>
+                  order.orderId === pendingOrder.orderId && order.botId !== null
+                    ? { ...order, status: 'complete' }
+                    : order
+                )
+              );
+
+              props.setUpdate(true);
+              getBots();
+
+              setTimeout(() => props.setUpdate(false), 50);
+            }, 10000);
+          }
+        }
       } else {
-        await botApi.deleteNewestBot();
+        const botOrderIndex = orders.findIndex(
+          o => o.botId === bots[bots.length - 1]?.botId
+        );
+
+        const targetOrder = orders[botOrderIndex];
+        if (targetOrder) {
+          targetOrder.status =
+            targetOrder.status !== 'complete' ? 'pending' : targetOrder.status;
+          targetOrder.botId = null;
+
+          orders[botOrderIndex] = targetOrder;
+        }
+
+        bots.pop();
       }
+
+      utils.setCookie('bots', bots);
+      utils.setCookie('orders', orders);
+      props.setUpdate(true);
     } catch (error: any) {
-      toast.dismiss(toastId);
-      toast.error(
-        error.response?.data?.message ||
-          'Unexpected Error. Please try again later.'
-      );
+      console.log(error);
+      toast.error('Unexpected Error. Please try again later.');
     } finally {
-      setTimeout(async () => {
-        toast.dismiss(toastId);
-        await getBots();
+      getBots();
+
+      setTimeout(() => {
+        props.setUpdate(false);
         canAction.current = true;
-      }, 1000);
+      }, 50);
     }
   };
 
   return (
-    <div className="bots page">
+    <div className="bots">
       <LoadingScreen isLoading={isLoading} />
       <div className="container">
-        <div
-          className="top-wrapper"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            marginBottom: '20px',
-            flexWrap: 'wrap',
-          }}
-        >
-          <h1 style={{ margin: '0 auto 0 0' }}>Bots</h1>
+        <div className="top-wrapper">
           <span className="add-bot" onClick={() => handleBot('add')}>
             + Bot
           </span>
@@ -104,19 +152,16 @@ const Bots = () => {
         <div className="bots-container list-container">
           <div className="bots-header list-header">
             <div className="bots-header-item list-header-item">No.</div>
-            <div className="bots-header-item list-header-item">Status</div>
+            <div className="bots-header-item list-header-item">Bot Status</div>
             <div className="bots-header-item list-header-item">Order Id</div>
-            <div className="bots-header-item list-header-item">
-              Order Category
-            </div>
+            <div className="bots-header-item list-header-item">Category</div>
             <div className="bots-header-item list-header-item">
               Order Status
             </div>
-            <div className="bots-header-item list-header-item">Product</div>
           </div>
 
-          {displayedItems.length > 0 ? (
-            displayedItems.map((_, index) => (
+          {bots.length > 0 ? (
+            bots.map((_, index) => (
               <div key={index} className="bot-content list-content">
                 <div className="bot-content-item list-content-item">
                   {index + 1}
@@ -127,7 +172,7 @@ const Bots = () => {
                 </div>
 
                 <div className="bot-content-item list-content-item">
-                  {_.order ? _.order.orderRunningId : '-'}
+                  {_.order ? _.order.orderId : '-'}
                 </div>
 
                 <div className="bot-content-item list-content-item">
@@ -147,48 +192,12 @@ const Bots = () => {
                       : 'Pending'
                     : '-'}
                 </div>
-
-                <div className="user-content-item list-content-item">
-                  {_.order ? _.order.productName : '-'}
-                </div>
               </div>
             ))
           ) : (
             <p className="not-found">No Result Found</p>
           )}
         </div>
-
-        {totalPage > 1 ? (
-          <div className="pagination-wrapper">
-            <div
-              className={`pagination-item prev-btn ${
-                offset === 0 ? 'disabled' : ''
-              }`}
-              onClick={() =>
-                offset - 1 < 1 ? setOffset(0) : setOffset(offset - 1)
-              }
-            >
-              <FontAwesomeIcon icon={faChevronLeft} />
-            </div>
-
-            <div className="current-page">{offset + 1}</div>
-
-            <div
-              className={`pagination-item next-btn ${
-                offset + 1 >= totalPage ? 'disabled' : ''
-              }`}
-              onClick={() =>
-                offset + 1 >= totalPage
-                  ? setOffset(totalPage - 1)
-                  : setOffset(offset + 1)
-              }
-            >
-              <FontAwesomeIcon icon={faChevronRight} />
-            </div>
-          </div>
-        ) : (
-          ''
-        )}
       </div>
     </div>
   );
